@@ -3,11 +3,14 @@ using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using SDL2;
 
 namespace TapToClickTest
 {
     public class TestGame : Game
     {
+
+        private static TestGame sInstance;
 
         GraphicsDeviceManager gdm;
         SpriteBatch sb;
@@ -38,6 +41,10 @@ namespace TapToClickTest
         {
 			gdm = new GraphicsDeviceManager(this);
             spriteList = new List<LameSprite>();
+
+            if (sInstance == null) {
+                sInstance = this;
+            }
         }
 
         protected override void Initialize()
@@ -45,7 +52,26 @@ namespace TapToClickTest
             base.Initialize();
 
             IsMouseVisible = true;
+
+            SDL.SDL_AddEventWatch(eventWatcher, IntPtr.Zero);
         }
+
+		private static SDL.SDL_EventFilter eventWatcher = SDLEventWatcher;
+		private static unsafe int SDLEventWatcher(IntPtr func, IntPtr evtPtr)
+		{
+			SDL.SDL_Event* evt = (SDL.SDL_Event*)evtPtr;
+			if (evt->type == SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN)
+			{
+                // Mouse was clicked!
+                var ms = Mouse.GetState();
+                sInstance.spriteList.Add(new LameSprite(ms.X, ms.Y, Color.Blue));
+			}
+			else if (evt->type == SDL.SDL_EventType.SDL_MOUSEBUTTONUP)
+			{
+				// Mouse was released!
+			}
+			return 0; // This doesn't matter like it would for SetEventFilter
+		}
 
         protected override void LoadContent()
         {
